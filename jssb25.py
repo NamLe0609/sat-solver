@@ -343,6 +343,5 @@ problem = load_dimacs("8queens.txt")
 
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
-#print(unit_propagate(problem))
 print(dpll_sat_solve_WL(problem))
 #print(sat_checker(problem, dpll_sat_solve_WL(problem)))

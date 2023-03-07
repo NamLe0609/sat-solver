@@ -185,7 +185,6 @@ problem = load_dimacs("8queens.txt")
 
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
-#print(unit_propagate(problem))
 #print(dpll_sat_solve_WL(problem))
 #print(sat_checker(problem, dpll_sat_solve_WL(problem)))
 print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
