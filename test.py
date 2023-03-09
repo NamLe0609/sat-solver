@@ -11,7 +11,7 @@ def load_dimacs(filename):
     for line in lines:
         if line[0] == "c" or line[0] == "p":
             continue
-        sections = line.strip('\n').split(" ")
+        sections = line.strip('\n').strip(" ").split()
         clause = [int(literal) for literal in sections if literal != "0"]
         clauseSet.append(clause)
         
@@ -21,11 +21,10 @@ def getOccurrence(clause_set):
     occurrence = {}
     for clause in clause_set:
         for literal in clause:
-            absoluteLiteral = abs(literal)
             if literal in occurrence:
-                occurrence[absoluteLiteral] += 1
+                occurrence[literal] += 1
             else:
-                occurrence[absoluteLiteral] = 1
+                occurrence[literal] = 1
     return occurrence
 
 def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
@@ -179,12 +178,15 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
-problem = load_dimacs("8queens.txt")
+#problem = load_dimacs("8queens.txt")
 #problem = load_dimacs("LNP-6.txt")
 #problem = load_dimacs("gt.txt")
+#problem = load_dimacs("uf20-099.txt")
+problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
 
+print(problem)
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
 #print(dpll_sat_solve_WL(problem))
 #print(sat_checker(problem, dpll_sat_solve_WL(problem)))
-print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
+#print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
