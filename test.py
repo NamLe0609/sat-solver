@@ -29,35 +29,33 @@ def getOccurrence(clause_set):
 
 def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
     unitPropQueue = []
+    if negUnitLiteral not in watchedLiteral:
+        return unitPropQueue
     watchedClause = watchedLiteral[negUnitLiteral].copy()
     
-    clauseRemoved = 0
-    for i in range(len(watchedClause)):
-        if watchedClause[i][0] in partial_assignment or watchedClause[i][1] in partial_assignment:
+    for clause in watchedClause:
+        if clause[0] in partial_assignment or clause[1] in partial_assignment:
             continue
         
         changeIndex = 0
-        if watchedClause[i][1] == negUnitLiteral:
+        if clause[1] == negUnitLiteral:
             changeIndex = 1
         
-        for j in range(2, len(watchedClause[i])):
-            if -watchedClause[i][j] in partial_assignment:
-                continue
-            else:
-                clauseRemoved += 1
-                watchedLiteral[negUnitLiteral].pop(i-clauseRemoved)
-                if watchedClause[i][j] not in watchedLiteral:
-                    watchedLiteral[watchedClause[i][j]] = [watchedClause[i]]
+        for i in range(2, len(clause)):
+            if -clause[i] not in partial_assignment or clause[i] in partial_assignment:
+                watchedLiteral[negUnitLiteral].remove(clause)
+                if clause[i] not in watchedLiteral:
+                    watchedLiteral[clause[i]] = [clause]
                 else:
-                    watchedLiteral[watchedClause[i][j]].append(watchedClause[i])
-                watchedClause[i][j], watchedClause[i][changeIndex] = watchedClause[i][changeIndex], watchedClause[i][j]
+                    watchedLiteral[clause[i]].append(clause)
+                clause[i], clause[changeIndex] = clause[changeIndex], clause[i]
                 break
         
-        if watchedClause[i][changeIndex] == negUnitLiteral:
-            if -watchedClause[i][1-changeIndex] in partial_assignment:
+        if clause[changeIndex] == negUnitLiteral:
+            if -clause[1-changeIndex] in partial_assignment:
                 return False
             else:
-                unitPropQueue.append(watchedClause[i][1-changeIndex])
+                unitPropQueue.append(clause[1-changeIndex])
             
     return unitPropQueue
 
@@ -177,7 +175,7 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("uf20-099.txt")
 problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
 
-print(problem)
+#print(problem)
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
 #print(dpll_sat_solve_WL(problem))
