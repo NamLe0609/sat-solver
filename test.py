@@ -31,40 +31,35 @@ def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
     unitPropQueue = []
     watchedClause = watchedLiteral[negUnitLiteral].copy()
     
-    for clause in watchedClause:
-        canWatchElse = False
-        canWatchWatched = False
+    clauseRemoved = 0
+    for i in range(len(watchedClause)):
+        if watchedClause[i][0] in partial_assignment or watchedClause[i][1] in partial_assignment:
+            continue
         
-        for literal in clause:
-            if literal in partial_assignment:
-                canWatchElse = True
-                break
-            
-            elif -literal in partial_assignment or literal == negUnitLiteral:
+        changeIndex = 0
+        if watchedClause[i][1] == negUnitLiteral:
+            changeIndex = 1
+        
+        for j in range(2, len(watchedClause[i])):
+            if -watchedClause[i][j] in partial_assignment:
                 continue
-            
-            elif literal in watchedLiteral and clause in watchedLiteral[literal]:
-                canWatchWatched = literal
-                
             else:
-                canWatchElse = True
-                watchedLiteral[negUnitLiteral].remove(clause)
-                if literal not in watchedLiteral:
-                    watchedLiteral[literal] = [clause]
+                clauseRemoved += 1
+                watchedLiteral[negUnitLiteral].pop(i-clauseRemoved)
+                if watchedClause[i][j] not in watchedLiteral:
+                    watchedLiteral[watchedClause[i][j]] = [watchedClause[i]]
                 else:
-                    watchedLiteral[literal].append(clause)
+                    watchedLiteral[watchedClause[i][j]].append(watchedClause[i])
+                watchedClause[i][j], watchedClause[i][changeIndex] = watchedClause[i][changeIndex], watchedClause[i][j]
                 break
         
-        if canWatchWatched and not canWatchElse:
-            unitPropQueue.append(canWatchWatched)
+        if watchedClause[i][changeIndex] == negUnitLiteral:
+            if -watchedClause[i][1-changeIndex] in partial_assignment:
+                return False
+            else:
+                unitPropQueue.append(watchedClause[i][1-changeIndex])
             
-        elif not canWatchElse and not canWatchWatched:
-            return False
-            
-    if unitPropQueue:
-        return unitPropQueue
-    else:
-        return True
+    return unitPropQueue
 
 def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
     if literalAssignment != 0:
@@ -80,10 +75,10 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
             if -literalAssignment in watchedLiteral:
                 updateWatched = watchElse(partial_assignment, watchedLiteral, -literalAssignment)
                 
-                if not updateWatched:
+                if updateWatched == False:
                     return False
                 
-                if isinstance(updateWatched, list):
+                if updateWatched:
                     unitPropQueue = unitPropQueue + updateWatched
         
         return True
@@ -92,8 +87,8 @@ def dpll_sat_solve_WL(clause_set, partial_assignment=set(), watchedLiteral={}, o
     # Initialize watched literals
     if watchedLiteral == {}:
         literalOccurrence = getOccurrence(clause_set)
-        occurrence = [sorted(literalOccurrence, key=literalOccurrence.get, reverse=True), 0]
-        cardinality = max(max(occurrence[0]),-min(occurrence[0]))
+        occurrence = sorted(literalOccurrence, key=literalOccurrence.get, reverse=True)
+        cardinality = max(max(occurrence),-min(occurrence))
         unitPropQueue = []
         
         for clause in clause_set:
@@ -129,12 +124,10 @@ def dpll_sat_solve_WL(clause_set, partial_assignment=set(), watchedLiteral={}, o
         return partial_assignment
     
     # Choose next literal
-    prevOccurrenceCount = occurrence[1]
-    for i in range(occurrence[1], len(occurrence[0])):
-        literal = occurrence[0][i]
+    for i in range(len(occurrence)):
+        literal = occurrence[i]
         if literal not in partial_assignment and -literal not in partial_assignment:
             nextLiteral = literal
-            occurrence[1] += 1
             break
     
     # For reset
@@ -146,7 +139,6 @@ def dpll_sat_solve_WL(clause_set, partial_assignment=set(), watchedLiteral={}, o
     
     # Reset
     partial_assignment = previousPartialAssignment
-    occurrence[1] = prevOccurrenceCount
     
     branch2 = dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, -nextLiteral)
     if branch2:
@@ -175,6 +167,7 @@ def sat_checker(clause_set, truthAssignment):
     return "Does not solve"
 
 #problem = load_dimacs("sat.txt")
+
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
@@ -188,5 +181,5 @@ print(problem)
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
 #print(dpll_sat_solve_WL(problem))
-#print(sat_checker(problem, dpll_sat_solve_WL(problem)))
+print(sat_checker(problem, dpll_sat_solve_WL(problem)))
 #print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
