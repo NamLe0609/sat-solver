@@ -30,8 +30,8 @@ def getOccurrence(clause_set):
 
 
 def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLiteral, antecedent, assigned):
-    if decisionLevel == 1:
-        return False
+    if decisionLevel == 0:
+        return -1
     
     learnedClause = set()
     varQueue = set()
@@ -44,7 +44,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
     largest = [0, decisionLevel]
     while varQueue:
         latestAssignedLit = assigned.pop()
-        if len(varQueue) == 1:
+        if len(varQueue) == 1 and abs(latestAssignedLit) in varQueue:
             largest[0] = -latestAssignedLit
             break
             
@@ -64,14 +64,14 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
                     learnedClause.add(literal)
     
     if not learnedClause:
-        watchedLiteral[0].add(varQueue.pop())
+        watchedLiteral[0].add(largest[0])
         return 0
         
     secondLargest = [0, 0]
     for literal in learnedClause:
         literalDecisionLevel = partial_assignment[-literal]
         
-        if literalDecisionLevel > secondLargest[1]:
+        if literalDecisionLevel >= secondLargest[1]:
             secondLargest = [literal, literalDecisionLevel]
 
     watchedLearnedClause = [largest[0], secondLargest[0]]
@@ -128,7 +128,7 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
             unitPropQueue.append((unit, []))
     else:
         unitPropQueue = [(literalAssignment, [])]
-        decisionLevel = max(set(partial_assignment.values())) + 1
+        decisionLevel = len(set(partial_assignment.values())) + 1
         
     antecedent = {}
     assigned = []
@@ -182,7 +182,7 @@ def dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral={}, occurre
 
     # Unit prop and check if unsat
     unitPropResult = unitPropagateWL(partial_assignment, watchedLiteral, nextLiteral)
-    if type(unitPropResult) == int:
+    if not isinstance(unitPropResult, bool):
         return unitPropResult
 
     # Check if sat
@@ -202,25 +202,27 @@ def dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral={}, occurre
     branch1 = dpll_sat_solve_WL(
         clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
     
-    while type(branch1) == int:
+    while True:  
+        if branch1 == -1:
+            return False
+        
         if isinstance(branch1, list):
             return list(branch1)
         
         if branch1 == 0:
-            if max(set(previousPartialAssignment.values())) == 0:
+            if len(previousPartialAssignment.values()) == 0 or max(set(previousPartialAssignment.values())) == 0:
                 nextLiteral = 0
+                previousPartialAssignment = {}
             else:
                 return branch1
         else:
-            if branch1 - 1 < max(set(previousPartialAssignment.values())):
+            if branch1 - 1 < len(set(previousPartialAssignment.values())):
                 return branch1
         
         partial_assignment = previousPartialAssignment.copy()
         
         branch1 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
-        
-    return False
 
 
 def sat_checker(clause_set, truthAssignment):
@@ -248,12 +250,15 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
 #problem = load_dimacs("8queens.txt")
-problem = load_dimacs("LNP-6.txt")
+#problem = load_dimacs("LNP-6.txt")
 #problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
 #problem = load_dimacs("n100.txt")
 #problem = load_dimacs("uf20-0101.txt")
+#problem = load_dimacs("uf20-0119.txt")
+#problem = load_dimacs("uuf50-01.txt")
+problem = load_dimacs("uuf50-018.txt")
 
 #print(problem)
 #print(simple_sat_solve(problem))
