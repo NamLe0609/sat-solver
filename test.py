@@ -69,6 +69,10 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
                 else:
                     learnedClause.add(literal)
     
+    if not learnedClause:
+        watchedLiteral[0].add(varQueue.pop())
+        return 0
+        
     secondLargest = [0, 0]
     for literal in learnedClause:
         literalDecisionLevel = partial_assignment[-literal]
@@ -142,7 +146,11 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
         assigned.append(literalAssignment)
         antecedent[abs(literalAssignment)] = unitLiteral[1]
         if -literalAssignment in partial_assignment:
-            return learnConflict(partial_assignment, updateWatched, decisionLevel, watchedLiteral, antecedent, assigned)
+            try:
+                raise error()
+            except:
+                raise error()
+            
         
         partial_assignment[literalAssignment] = decisionLevel
         
@@ -212,23 +220,6 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
         branch1 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
 
-    # Reset
-    partial_assignment = previousPartialAssignment
-
-    branch2 = dpll_sat_solve_WL(
-        clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, -nextLiteral)
-    while branch2:
-        if isinstance(branch2, list):
-            return list(branch2)
-
-        if -branch2 in previousPartialAssignment:
-            return branch2
-        
-        partial_assignment = previousPartialAssignment.copy()
-
-        branch2 = dpll_sat_solve_WL(
-            clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
-
     return False
 
 
@@ -256,9 +247,9 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
-#problem = load_dimacs("8queens.txt")
+problem = load_dimacs("8queens.txt")
 #problem = load_dimacs("LNP-6.txt")
-problem = load_dimacs("gt.txt")
+#problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
 
