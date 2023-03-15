@@ -7,7 +7,7 @@ def load_dimacs(filename):
     clauseSet = []
     # n is the number of the largest variable, and
     # m is the total number of clauses in the clause-set
-    ignored = {"c", "p", "%", "0", "", " "}
+    ignored = {"c", "p", "%", "0"}
     for line in lines or line:
         if line[0] in ignored:
             continue
@@ -138,6 +138,9 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
         if literalAssignment in partial_assignment:
             continue
         
+        if -literalAssignment in partial_assignment:
+            print("hi")
+        
         assigned.append(literalAssignment)
         antecedent[abs(literalAssignment)] = unitLiteral[1]
             
@@ -258,7 +261,7 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("uf20-0101.txt")
 #problem = load_dimacs("uf20-0119.txt")
 #problem = load_dimacs("uuf50-01.txt")
-problem = load_dimacs("uuf50-018.txt")
+problem = load_dimacs("g250.29.txt")
 
 #print(problem)
 #print(simple_sat_solve(problem))
@@ -267,7 +270,7 @@ print(dpll_sat_solve(problem,[]))
 #print(sat_checker(problem, dpll_sat_solve(problem,[])))
 #print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
 
-from itertools import chain
+""" from itertools import chain
 from os import listdir
 
 # if you store them in folder `tests`, like:
@@ -280,7 +283,7 @@ from os import listdir
 # | | | > the uf50 files
 # | | uuf_50
 # | | | > the uuf50 files
-""" uf_twenty = map(lambda x: ("uf20/" + x[:-4], True), listdir("tests/uf20"))
+uf_twenty = map(lambda x: ("uf20/" + x[:-4], True), listdir("tests/uf20"))
 uf_fifty = map(lambda x: ("uf50/" + x[:-4], True), listdir("tests/uf50"))
 uuf_fifty = map(lambda x: ("uuf50/" + x[:-4], False), listdir("tests/uuf50"))
 
@@ -299,7 +302,7 @@ def runall():
             # if you unit propagate after assigning it should be empty
             # assert len(unit_propagate(sat_instance, set(sat_res))) == 0
         else:
-            assert sat_res == None
+            assert sat_res == False
         print("\r", end="")
         
 runall() """
