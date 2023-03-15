@@ -2,15 +2,14 @@ import numpy
 
 
 def load_dimacs(filename):
-    with open(filename) as f:
-        lines = f.readlines()
-        f.close()
+    lines = filter(None, (line.rstrip() for line in open(filename)))
 
     clauseSet = []
     # n is the number of the largest variable, and
     # m is the total number of clauses in the clause-set
-    for line in lines:
-        if line[0] == "c" or line[0] == "p":
+    ignored = {"c", "p", "%", "0", "", " "}
+    for line in lines or line:
+        if line[0] in ignored:
             continue
         sections = line.strip('\n').strip(" ").split()
         clause = [int(literal) for literal in sections if literal != "0"]
@@ -43,7 +42,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
             learnedClause.add(literal)
     
     if len(varQueue) == 1:
-        watchedLiteral[0].add(varQueue.pop())
+        watchedLiteral[0].add(-assigned.pop())
         return 0
     
     largest = [0, decisionLevel]
@@ -62,8 +61,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
                 if abs(literal) == latestAssignedVar:
                     continue
                 elif abs(literal) in antecedent:
-                    if antecedent[abs(literal)]:
-                        varQueue.add(abs(literal))
+                    varQueue.add(abs(literal))
                 elif -literal in learnedClause:
                     learnedClause.remove(literal)
                 else:
@@ -127,7 +125,7 @@ def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
 
 
 def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
-    if literalAssignment == 0:
+    if literalAssignment == 0 or (not partial_assignment and watchedLiteral[0]):
         unitPropQueue = []
         for unit in watchedLiteral[0]:
             unitPropQueue.append((unit, []))
@@ -151,7 +149,6 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
             except:
                 raise error()
             
-        
         partial_assignment[literalAssignment] = decisionLevel
         
         if -literalAssignment in watchedLiteral:
@@ -167,9 +164,13 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
     return True
 
 
-def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occurrence=[], cardinality=0, nextLiteral=0):
+def dpll_sat_solve(clause_set, partial_assignment):
+    return dpll_sat_solve_WL(clause_set, [], {}, [], 0, 0)
+
+def dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral={}, occurrence=[], cardinality=0, nextLiteral=0):
     # Initialize watched literals
     if watchedLiteral == {}:
+        partial_assignment = {}
         literalOccurrence = getOccurrence(clause_set)
         occurrence = sorted(literalOccurrence,
                             key=literalOccurrence.get, reverse=True)
@@ -208,10 +209,14 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
 
     branch1 = dpll_sat_solve_WL(
         clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
-    while branch1:
+    
+    while True:
         if isinstance(branch1, list):
             return list(branch1)
 
+        if branch1 == 0 and len(previousPartialAssignment) != 0:
+            return branch1
+        
         if -branch1 in previousPartialAssignment:
             return branch1
         
@@ -219,8 +224,6 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
         
         branch1 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
-
-    return False
 
 
 def sat_checker(clause_set, truthAssignment):
@@ -246,16 +249,55 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("sat.txt")
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
-#problem = load_dimacs("PHP-5-4.txt")
-problem = load_dimacs("8queens.txt")
+problem = load_dimacs("PHP-5-4.txt")
+#problem = load_dimacs("8queens.txt")
 #problem = load_dimacs("LNP-6.txt")
 #problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
+#problem = load_dimacs("n100.txt")
+#problem = load_dimacs("uf20-0101.txt")
 
 #print(problem)
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
-#print(dpll_sat_solve_WL(problem))
-print(sat_checker(problem, dpll_sat_solve_WL(problem)))
+print(dpll_sat_solve(problem,[]))
+#print(sat_checker(problem, dpll_sat_solve(problem,[])))
 #print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
+
+from itertools import chain
+from os import listdir
+
+# if you store them in folder `tests`, like:
+# sat_solve_folder
+# | sat_solver_.py
+# | tests
+# | | uf_20
+# | | | > the uf20 files
+# | | uf_50
+# | | | > the uf50 files
+# | | uuf_50
+# | | | > the uuf50 files
+""" uf_twenty = map(lambda x: ("uf20/" + x[:-4], True), listdir("tests/uf20"))
+uf_fifty = map(lambda x: ("uf50/" + x[:-4], True), listdir("tests/uf50"))
+uuf_fifty = map(lambda x: ("uuf50/" + x[:-4], False), listdir("tests/uuf50"))
+
+
+def runall():
+    for name, sat in chain(
+        uf_twenty,
+        uuf_fifty,
+        uf_fifty,
+    ):
+        sat_instance = load_dimacs(f"tests/{name}.cnf")
+        print(name, end="")
+        sat_res = dpll_sat_solve(sat_instance, [])
+        if sat:
+            assert type(sat_res) == list
+            # if you unit propagate after assigning it should be empty
+            # assert len(unit_propagate(sat_instance, set(sat_res))) == 0
+        else:
+            assert sat_res == None
+        print("\r", end="")
+        
+runall() """
