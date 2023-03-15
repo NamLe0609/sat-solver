@@ -43,7 +43,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
             learnedClause.add(literal)
     
     if len(varQueue) == 1:
-        watchedLiteral[0].append(varQueue.pop())
+        watchedLiteral[0].add(varQueue.pop())
         return 0
     
     largest = [0, decisionLevel]
@@ -61,8 +61,9 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
             for literal in varAntecedent:
                 if abs(literal) == latestAssignedVar:
                     continue
-                elif abs(literal) in antecedent and antecedent[abs(literal)]:
-                    varQueue.add(abs(literal))
+                elif abs(literal) in antecedent:
+                    if antecedent[abs(literal)]:
+                        varQueue.add(abs(literal))
                 elif -literal in learnedClause:
                     learnedClause.remove(literal)
                 else:
@@ -141,7 +142,7 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
         assigned.append(literalAssignment)
         antecedent[abs(literalAssignment)] = unitLiteral[1]
         if -literalAssignment in partial_assignment:
-            return False
+            return learnConflict(partial_assignment, updateWatched, decisionLevel, watchedLiteral, antecedent, assigned)
         
         partial_assignment[literalAssignment] = decisionLevel
         
@@ -165,11 +166,11 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
         occurrence = sorted(literalOccurrence,
                             key=literalOccurrence.get, reverse=True)
         cardinality = max(max(occurrence), -min(occurrence))
-        watchedLiteral[0] = []
+        watchedLiteral[0] = set()
 
         for clause in clause_set:
             if len(clause) == 1:
-                watchedLiteral[0].append(clause[0])
+                watchedLiteral[0].add(clause[0])
                 continue
 
             for i in range(2):
@@ -255,15 +256,15 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
-problem = load_dimacs("8queens.txt")
+#problem = load_dimacs("8queens.txt")
 #problem = load_dimacs("LNP-6.txt")
-#problem = load_dimacs("gt.txt")
+problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
 
 #print(problem)
 #print(simple_sat_solve(problem))
 #print(branching_sat_solve(problem, []))
-print(dpll_sat_solve_WL(problem))
-#print(sat_checker(problem, dpll_sat_solve_WL(problem)))
+#print(dpll_sat_solve_WL(problem))
+print(sat_checker(problem, dpll_sat_solve_WL(problem)))
 #print(sat_checker(problem, [-28, -37, -29, -36, -19, -46, -20, -38, -21, -27, -30, -35, -43, -22, -44, -45, -10, -55, -11, -18, -26, -34, 42, -47, -50, 12, -39, -51, -13, -31, -52, -14, 23, 53, -15, -54, -1, -2, -3, -4, -5, 6, -7, -8, -9, -17, 25, -33, -41, -49, -57, -64, -56, -58, -48, 59, 40, -60, -32, -61, -24, -62, -16, -63]))
