@@ -40,11 +40,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
             varQueue.add(abs(literal))
         else:
             learnedClause.add(literal)
-    
-    if len(varQueue) == 1:
-        watchedLiteral[0].add(-assigned.pop())
-        return 0
-    
+        
     largest = [0, decisionLevel]
     while varQueue:
         latestAssignedLit = assigned.pop()
@@ -88,7 +84,7 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
         else:
             watchedLiteral[watchedLearnedClause[i]] = [watchedLearnedClause]
 
-    return secondLargest[0]
+    return secondLargest[1]
 
 
 def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
@@ -125,14 +121,15 @@ def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
 
 
 def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
-    if literalAssignment == 0 or (not partial_assignment and watchedLiteral[0]):
+    if literalAssignment == 0:
         unitPropQueue = []
+        decisionLevel = 0
         for unit in watchedLiteral[0]:
             unitPropQueue.append((unit, []))
     else:
         unitPropQueue = [(literalAssignment, [])]
-
-    decisionLevel = len(partial_assignment.values()) + 1
+        decisionLevel = max(set(partial_assignment.values())) + 1
+        
     antecedent = {}
     assigned = []
     while unitPropQueue:
@@ -143,11 +140,6 @@ def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
         
         assigned.append(literalAssignment)
         antecedent[abs(literalAssignment)] = unitLiteral[1]
-        if -literalAssignment in partial_assignment:
-            try:
-                raise error()
-            except:
-                raise error()
             
         partial_assignment[literalAssignment] = decisionLevel
         
@@ -190,7 +182,7 @@ def dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral={}, occurre
 
     # Unit prop and check if unsat
     unitPropResult = unitPropagateWL(partial_assignment, watchedLiteral, nextLiteral)
-    if unitPropResult != True:
+    if type(unitPropResult) == int:
         return unitPropResult
 
     # Check if sat
@@ -210,20 +202,25 @@ def dpll_sat_solve_WL(clause_set, partial_assignment, watchedLiteral={}, occurre
     branch1 = dpll_sat_solve_WL(
         clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
     
-    while True:
+    while type(branch1) == int:
         if isinstance(branch1, list):
             return list(branch1)
-
-        if branch1 == 0 and len(previousPartialAssignment) != 0:
-            return branch1
         
-        if -branch1 in previousPartialAssignment:
-            return branch1
+        if branch1 == 0:
+            if max(set(previousPartialAssignment.values())) == 0:
+                nextLiteral = 0
+            else:
+                return branch1
+        else:
+            if branch1 - 1 < max(set(previousPartialAssignment.values())):
+                return branch1
         
         partial_assignment = previousPartialAssignment.copy()
         
         branch1 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
+        
+    return False
 
 
 def sat_checker(clause_set, truthAssignment):
@@ -249,9 +246,9 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("sat.txt")
 #problem = load_dimacs("unsat.txt")
 #problem = load_dimacs("W_2,3_n=8.txt")
-problem = load_dimacs("PHP-5-4.txt")
+#problem = load_dimacs("PHP-5-4.txt")
 #problem = load_dimacs("8queens.txt")
-#problem = load_dimacs("LNP-6.txt")
+problem = load_dimacs("LNP-6.txt")
 #problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
