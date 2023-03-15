@@ -253,7 +253,7 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("W_2,3_n=8.txt")
 #problem = load_dimacs("PHP-5-4.txt")
 #problem = load_dimacs("8queens.txt")
-#problem = load_dimacs("LNP-6.txt")
+problem = load_dimacs("LNP-6.txt")
 #problem = load_dimacs("gt.txt")
 #problem = load_dimacs("uf20-099.txt")
 #problem = load_dimacs("CBS_k3_n100_m403_b10_0.txt")
@@ -261,7 +261,7 @@ def sat_checker(clause_set, truthAssignment):
 #problem = load_dimacs("uf20-0101.txt")
 #problem = load_dimacs("uf20-0119.txt")
 #problem = load_dimacs("uuf50-01.txt")
-problem = load_dimacs("g250.29.txt")
+#problem = load_dimacs("g250.29.txt")
 
 #print(problem)
 #print(simple_sat_solve(problem))
