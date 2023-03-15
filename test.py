@@ -30,38 +30,52 @@ def getOccurrence(clause_set):
     return occurrence
 
 
-def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLiteral):
-    learnedClause = set(trail.pop())
-
-    while (trail):
-        supportClauses = trail.pop()
-        if len(supportClauses) == 1:
-            trail = []
-        for clause in supportClauses:
-            for literal in clause:
-                if -literal in learnedClause:
-                    learnedClause.remove(-literal)
+def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLiteral, antecedent, assigned):
+    if decisionLevel == 1:
+        return False
+    
+    learnedClause = set()
+    varQueue = set()
+    for literal in conflictClause:
+        if abs(literal) in antecedent:
+            varQueue.add(abs(literal))
+        else:
+            learnedClause.add(literal)
+    
+    if len(varQueue) == 1:
+        watchedLiteral[0].append(varQueue.pop())
+        return 0
+    
+    largest = [0, decisionLevel]
+    while varQueue:
+        latestAssignedLit = assigned.pop()
+        if len(varQueue) == 1:
+            largest[0] = -latestAssignedLit
+            break
+            
+        latestAssignedVar = abs(latestAssignedLit)
+        if latestAssignedVar in varQueue:
+            varQueue.remove(latestAssignedVar)
+            varAntecedent = antecedent[latestAssignedVar]
+            
+            for literal in varAntecedent:
+                if abs(literal) == latestAssignedVar:
+                    continue
+                elif abs(literal) in antecedent and antecedent[abs(literal)]:
+                    varQueue.add(abs(literal))
+                elif -literal in learnedClause:
+                    learnedClause.remove(literal)
                 else:
                     learnedClause.add(literal)
-
+    
     secondLargest = [0, 0]
-    largest = [0, 0]
-    if len(learnedClause) == 1:
-        secondLargest = [learnedClause[0], 0]
-        watchedLiteral[0].append(learnedClause[0])
-        return secondLargest
-    else:
-        for literal in learnedClause:
-            if literal in partial_assignment or -literal in partial_assignment:
-                literalDecisionLevel = partial_assignment[-literal]
-                if literalDecisionLevel < decisionLevel:
-                    if literalDecisionLevel > secondLargest[1]:
-                        secondLargest = (literal, literalDecisionLevel)
-                else:
-                    largest = [literal, decisionLevel]
+    for literal in learnedClause:
+        literalDecisionLevel = partial_assignment[-literal]
+        
+        if literalDecisionLevel > secondLargest[1]:
+            secondLargest = [literal, literalDecisionLevel]
 
     watchedLearnedClause = [largest[0], secondLargest[0]]
-    learnedClause.remove(largest[0])
     learnedClause.remove(secondLargest[0])
     watchedLearnedClause += list(learnedClause)
 
@@ -71,11 +85,11 @@ def learnConflict(partial_assignment, conflictClause, decisionLevel, watchedLite
         else:
             watchedLiteral[watchedLearnedClause[i]] = [watchedLearnedClause]
 
-    return largest
+    return secondLargest[0]
 
 
 def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
-    unitPropQueue = [[], []]
+    unitPropQueue = []
     if negUnitLiteral not in watchedLiteral:
         return unitPropQueue
     watchedClause = watchedLiteral[negUnitLiteral].copy()
@@ -102,41 +116,44 @@ def watchElse(partial_assignment, watchedLiteral, negUnitLiteral):
             if -clause[1-changeIndex] in partial_assignment:
                 return tuple(clause)
             else:
-                unitPropQueue[0].append(clause[1-changeIndex])
-                unitPropQueue[1].append(clause)
-
+                unitPropQueue.append((clause[1-changeIndex], clause))
+                
     return unitPropQueue
 
 
 def unitPropagateWL(partial_assignment, watchedLiteral, literalAssignment):
     if literalAssignment == 0:
-        unitPropQueue = watchedLiteral[0]
+        unitPropQueue = []
+        for unit in watchedLiteral[0]:
+            unitPropQueue.append((unit, []))
     else:
-        unitPropQueue = [literalAssignment]
+        unitPropQueue = [(literalAssignment, [])]
 
     decisionLevel = len(partial_assignment.values()) + 1
     antecedent = {}
+    assigned = []
     while unitPropQueue:
-        literalAssignment = unitPropQueue.pop(0)
-
+        unitLiteral = unitPropQueue.pop(0)
+        literalAssignment = unitLiteral[0]
+        if literalAssignment in partial_assignment:
+            continue
+        
+        assigned.append(literalAssignment)
+        antecedent[abs(literalAssignment)] = unitLiteral[1]
         if -literalAssignment in partial_assignment:
             return False
-
+        
         partial_assignment[literalAssignment] = decisionLevel
-
+        
         if -literalAssignment in watchedLiteral:
             updateWatched = watchElse(
                 partial_assignment, watchedLiteral, -literalAssignment)
 
             if isinstance(updateWatched, tuple):
-                if (decisionLevel == 1):
-                    return False
-                return learnConflict(partial_assignment, updateWatched, decisionLevel, watchedLiteral)
+                return learnConflict(partial_assignment, updateWatched, decisionLevel, watchedLiteral, antecedent, assigned)
 
-            if updateWatched[0]:
-                unitPropQueue = unitPropQueue + updateWatched[0]
-                for i in range(len(updateWatched[0])):
-                    antecedent[updateWatched[0][i]] = updateWatched[1][i]
+            if updateWatched:
+                unitPropQueue = unitPropQueue + updateWatched
 
     return True
 
@@ -162,8 +179,9 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
                     watchedLiteral[clause[i]] = [clause]
 
     # Unit prop and check if unsat
-    if unitPropagateWL(partial_assignment, watchedLiteral, nextLiteral) == False:
-        return False
+    unitPropResult = unitPropagateWL(partial_assignment, watchedLiteral, nextLiteral)
+    if unitPropResult != True:
+        return unitPropResult
 
     # Check if sat
     if len(partial_assignment) == cardinality:
@@ -182,12 +200,14 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
     branch1 = dpll_sat_solve_WL(
         clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
     while branch1:
-        if len(partial_assignment) == cardinality:
+        if isinstance(branch1, list):
             return list(branch1)
 
-        if branch1[1] > len(previousPartialAssignment.values()):
+        if -branch1 in previousPartialAssignment:
             return branch1
-
+        
+        partial_assignment = previousPartialAssignment.copy()
+        
         branch1 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
 
@@ -197,11 +217,13 @@ def dpll_sat_solve_WL(clause_set, partial_assignment={}, watchedLiteral={}, occu
     branch2 = dpll_sat_solve_WL(
         clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, -nextLiteral)
     while branch2:
-        if len(partial_assignment) == cardinality:
+        if isinstance(branch2, list):
             return list(branch2)
 
-        if branch2[1] > len(previousPartialAssignment.values()):
+        if -branch2 in previousPartialAssignment:
             return branch2
+        
+        partial_assignment = previousPartialAssignment.copy()
 
         branch2 = dpll_sat_solve_WL(
             clause_set, partial_assignment, watchedLiteral, occurrence, cardinality, nextLiteral)
