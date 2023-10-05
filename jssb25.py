@@ -1,4 +1,4 @@
-# This is an implementation of a SAT solver by Nam Le for COMP1051_2022
+# This is an implementation of a SAT solver by Nam Le
 
 #################
 #   References  #
@@ -19,7 +19,7 @@ https://www.cs.cornell.edu/courses/cs4860/2009sp/lec-04.pdf
 import itertools
 
 #################
-#   Question 4  #
+# DIMACS OPENER #
 #################
 
 def load_dimacs(filename):
@@ -41,7 +41,7 @@ def load_dimacs(filename):
     return clauseSet
 
 #################
-#   Question 5  #
+#  Brute force  #
 #################
 
 # Converts a literal into its appropriate
@@ -90,9 +90,9 @@ def simple_sat_solve(clause_set):
 
     return False
 
-#################
-#   Question 6  #
-#################
+##################
+#Branching solver#
+##################
     
 def branching_sat_solve(clause_set, partial_assignment):
     newClauseSet = clause_set
@@ -140,9 +140,9 @@ def eliminate(clause_set, literalAssignment):
         
     return newClauseSet
 
-#################
-#   Question 7  #
-#################
+##################
+# Basic unitProp # 
+##################
 
 def unit_propagate(clause_set):
     propagateClause = next((clause for clause in clause_set if len(clause) == 1), None)
@@ -152,13 +152,9 @@ def unit_propagate(clause_set):
         
     return clause_set
 
-################# 
-#   Question 8  #
-#################
-#       +       #
-#################
-#   Question 9  #
-#################
+##################
+#   Main DPLL    #
+##################
 
 #
 #   Get occurrence of literals in clause set algorithm
